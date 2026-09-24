@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crafter Smash</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<!-- ===== MENÚ PRINCIPAL ===== -->
+<div id="screen-title" class="screen active">
+  <div class="title-wrap">
+    <div class="logo">
+      <span class="logo-top">CRAFTER</span>
+      <span class="logo-bottom">SMASH</span>
+      <span class="logo-sub">Edición <b>Crafter Station</b></span>
+    </div>
+    <div class="title-faces" id="title-faces"></div>
+    <div class="menu-buttons">
+      <button data-mode="cpu" class="btn big">1 JUGADOR vs CPU</button>
+      <button data-mode="2p" class="btn big">2 JUGADORES</button>
+      <button data-mode="training" class="btn">ENTRENAMIENTO</button>
+      <button data-go="controls" class="btn">CONTROLES Y TÉCNICAS</button>
+    </div>
+    <div class="hint">Usa el mouse o <kbd>↑</kbd><kbd>↓</kbd> + <kbd>Enter</kbd> · <kbd>M</kbd> silencia la música</div>
+  </div>
+</div>
+
+<!-- ===== SELECCIÓN DE PERSONAJE (estilo Smash) ===== -->
+<div id="screen-select" class="screen css">
+  <div class="css-top">
+    <div class="css-banner">ELIGE TU PERSONAJE</div>
+    <div class="css-mode" id="css-mode">VS</div>
+  </div>
+  <div class="css-grid-wrap"><div class="css-grid" id="css-grid"></div></div>
+  <div class="css-ready" id="css-ready" hidden>¡LISTOS PARA PELEAR! <small>Enter</small></div>
+  <div class="css-panels">
+    <div class="css-panel" id="panel-0"></div>
+    <div class="css-panel" id="panel-1"></div>
+  </div>
+  <div class="css-help">P1: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> mover · <kbd>F</kbd> elegir · <kbd>G</kbd> soltar &nbsp;|&nbsp; P2: <kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> · <kbd>K</kbd> elegir · <kbd>L</kbd> soltar &nbsp;|&nbsp; Mouse: clic = P1 · clic derecho = P2 · clic en la etiqueta del panel = CPU/Jugador</div>
+  <div class="options-row">
+    <div class="opt">
+      <label>Vidas</label>
+      <div class="stepper" data-opt="stocks"><button>−</button><span>3</span><button>+</button></div>
+    </div>
+    <div class="opt" id="opt-cpu">
+      <label>Nivel CPU</label>
+      <div class="stepper" data-opt="cpuLevel"><button>−</button><span>5</span><button>+</button></div>
+    </div>
+    <div class="opt stages">
+      <label>Escenario</label>
+      <div class="stage-pick">
+        <button data-stage="station" class="stage-btn selected">Templo Crafter</button>
+        <button data-stage="final" class="stage-btn">Destino Final</button>
+        <button data-stage="lima" class="stage-btn">Azotea Lima</button>
+      </div>
+    </div>
+  </div>
+  <div class="select-actions">
+    <button class="btn" data-go="title">← VOLVER</button>
+  </div>
+</div>
+
+<!-- ===== CONTROLES ===== -->
+<div id="screen-controls" class="screen">
+  <h1 class="screen-title">CONTROLES Y TÉCNICAS</h1>
+  <div class="controls-wrap">
+    <div class="ctrl-col">
+      <h2>Teclado</h2>
+      <table class="keys">
+        <tr><th></th><th class="p1">P1</th><th class="p2">P2</th></tr>
+        <tr><td>Mover</td><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td><kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd></td></tr>
+        <tr><td>Saltar</td><td><kbd>Espacio</kbd></td><td><kbd>J</kbd> / <kbd>Num0</kbd></td></tr>
+        <tr><td>Ataque</td><td><kbd>F</kbd></td><td><kbd>K</kbd> / <kbd>Num1</kbd></td></tr>
+        <tr><td>Especial</td><td><kbd>G</kbd></td><td><kbd>L</kbd> / <kbd>Num2</kbd></td></tr>
+        <tr><td>Escudo / Esquiva</td><td><kbd>H</kbd></td><td><kbd>Ñ</kbd> / <kbd>Num3</kbd></td></tr>
+        <tr><td>Agarre</td><td><kbd>R</kbd></td><td><kbd>I</kbd> / <kbd>Num.</kbd></td></tr>
+        <tr><td>Pausa</td><td colspan="2"><kbd>Esc</kbd> / <kbd>P</kbd></td></tr>
+        <tr><td>Hitboxes (debug)</td><td colspan="2"><kbd>Tab</kbd></td></tr>
+      </table>
+      <p class="note">🎮 <b>Mandos</b> soportados (Xbox/PS/Switch): stick = mover, <b>A</b> ataque, <b>B</b> especial, <b>X/Y</b> saltar, <b>gatillos</b> escudo, <b>RB/LB</b> agarre, <b>stick derecho</b> = C-stick (smash / aéreos).</p>
+      <h2>Ataques</h2>
+      <ul class="tech">
+        <li><b>Tilts:</b> mantén una dirección y presiona Ataque.</li>
+        <li><b>Smash:</b> presiona dirección + Ataque <i>al mismo tiempo</i>. Mantén Ataque para <b>cargar</b>.</li>
+        <li><b>Aéreos:</b> Ataque en el aire (neutral, adelante, atrás, arriba, abajo). El <i>dair</i> de Railly es un <b>meteoro</b>.</li>
+        <li><b>Especiales:</b> Especial + dirección (neutral / lado / arriba / abajo).</li>
+        <li><b>Smash Final:</b> llena tu barra de <b>SÚPER</b> haciendo daño y presiona Especial neutral.</li>
+      </ul>
+    </div>
+    <div class="ctrl-col">
+      <h2>Técnicas avanzadas</h2>
+      <ul class="tech">
+        <li><b>Short hop:</b> toca Saltar rápido (suéltalo antes de despegar) para un salto corto.</li>
+        <li><b>Fast fall:</b> presiona ↓ mientras caes para caer más rápido.</li>
+        <li><b>Airdodge direccional:</b> Escudo en el aire + dirección. Te vuelve intangible y te impulsa.</li>
+        <li><b>Wavedash:</b> Saltar e inmediatamente Escudo en diagonal hacia abajo → te deslizas por el piso.</li>
+        <li><b>Waveland:</b> airdodge diagonal hacia una plataforma al caer.</li>
+        <li><b>L-Cancel:</b> presiona Escudo justo antes de aterrizar con un aéreo → <b>mitad</b> de lag. Brilla en blanco si lo lograste.</li>
+        <li><b>Dash dance:</b> alterna izquierda/derecha rápido durante el dash inicial.</li>
+        <li><b>Parry (powershield):</b> activa el escudo justo antes del golpe → el rival queda congelado.</li>
+        <li><b>DI:</b> mantén una dirección cuando te golpean para desviar tu trayectoria (¡sobrevive más!).</li>
+        <li><b>Tech:</b> presiona Escudo justo al chocar con el piso o una pared. Con ←/→ ruedas.</li>
+        <li><b>Crouch cancel:</b> agachado recibes menos knockback.</li>
+        <li><b>Out of shield:</b> desde el escudo puedes saltar, agarrar (Ataque), rodar o esquivar (↓).</li>
+        <li><b>Borde:</b> agárrate del borde; sube, salta, rueda o ataca. Solo uno puede colgar (¡ledgehog!).</li>
+        <li><b>Waveshine</b> (Railly): Especial ↓ → Saltar → wavedash. Clásico.</li>
+        <li><b>Flotar</b> (Anthony): mantén Saltar en la cima del salto para levitar.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="select-actions"><button class="btn" data-go="title">← VOLVER</button></div>
+</div>
+
+<!-- ===== PAUSA ===== -->
+<div id="screen-pause" class="screen overlay">
+  <div class="pause-box">
+    <h1>PAUSA</h1>
+    <button class="btn big" id="btn-resume">CONTINUAR</button>
+    <button class="btn" id="btn-restart">REINICIAR</button>
+    <button class="btn" id="btn-quit">SALIR AL MENÚ</button>
+  </div>
+</div>
+
+<!-- ===== RESULTADOS ===== -->
+<div id="screen-results" class="screen overlay">
+  <div class="results-box">
+    <div class="winner">
+      <img id="winner-img" alt="">
+      <div>
+        <div class="winner-label">¡GANADOR!</div>
+        <div id="winner-name" class="winner-name"></div>
+      </div>
+    </div>
+    <table id="stats-table" class="stats"></table>
+    <div class="select-actions">
+      <button class="btn big" id="btn-rematch">REVANCHA</button>
+      <button class="btn" id="btn-reselect">CAMBIAR PERSONAJES</button>
+      <button class="btn" id="btn-menu">MENÚ</button>
+    </div>
+  </div>
+</div>
+
+<div id="mute-ind" class="mute-ind"></div>
+
+<script src="js/util.js"></script>
+<script src="js/sfxdata.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/input.js"></script>
+<script src="js/characters.js"></script>
+<script src="js/stages.js"></script>
+<script src="js/effects.js"></script>
+<script src="js/spritedata.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/items.js"></script>
+<script src="js/fighter.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/game.js"></script>
+<script src="js/menu.js"></script>
+</body>
+</html>
