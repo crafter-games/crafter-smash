@@ -116,9 +116,33 @@ kbd {
 .controls-wrap { display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; max-width: 1100px; }
 .ctrl-col { background: var(--panel); border: 2px solid var(--line); border-radius: 16px; padding: 16px 22px; width: min(520px, 92vw); }
 .ctrl-col h2 { font-family: 'Bangers', Impact, sans-serif; letter-spacing: 2px; margin: 6px 0 10px; color: var(--gold); }
+.bind-hint { display: block; font-family: 'Rubik', sans-serif; font-size: 12px; font-weight: 400; letter-spacing: 0; color: rgba(255,255,255,.55); margin-top: 2px; }
 table.keys { border-collapse: collapse; width: 100%; font-size: 14px; }
-table.keys td, table.keys th { padding: 5px 6px; border-bottom: 1px solid var(--line); text-align: left; }
+table.keys td, table.keys th { padding: 5px 6px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
 th.p1 { color: var(--p1); } th.p2 { color: var(--p2); }
+button.key-bind {
+  display: inline-block; min-width: 28px; padding: 2px 7px; margin: 0;
+  border: 1px solid rgba(255,255,255,.35); border-bottom-width: 3px; border-radius: 5px;
+  background: rgba(255,255,255,.1); color: #fff; font-family: ui-monospace, Menlo, monospace;
+  font-size: 12px; text-align: center; cursor: pointer; line-height: 1.3;
+}
+button.key-bind:hover { background: rgba(255,210,63,.25); border-color: var(--gold); }
+button.key-bind.listening {
+  background: var(--gold); color: var(--ink); border-color: #fff;
+  animation: bind-pulse .7s ease-in-out infinite alternate;
+}
+@keyframes bind-pulse { from { filter: brightness(1); } to { filter: brightness(1.25); } }
+.bind-status { min-height: 1.4em; }
+.bind-status.waiting { color: var(--gold); opacity: 1; font-weight: 600; }
+.bind-status.error { color: #ff7b7b; opacity: 1; font-weight: 600; }
+.bind-actions { margin: 8px 0 12px; }
+button.opt-toggle {
+  min-width: 52px; padding: 3px 10px; border: 2px solid var(--line); border-radius: 8px;
+  background: rgba(255,255,255,.06); color: rgba(255,255,255,.55);
+  font-family: 'Bangers', Impact, sans-serif; font-size: 16px; letter-spacing: 1px; cursor: pointer;
+}
+button.opt-toggle.on { background: rgba(39,201,63,.2); border-color: #27c93f; color: #7dff9a; }
+button.opt-toggle:hover { filter: brightness(1.2); }
 ul.tech { padding-left: 18px; margin: 0; font-size: 14px; line-height: 1.55; }
 .note { font-size: 13px; opacity: .85; line-height: 1.5; }
 

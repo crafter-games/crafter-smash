@@ -42,7 +42,7 @@
     <div class="css-panel" id="panel-0"></div>
     <div class="css-panel" id="panel-1"></div>
   </div>
-  <div class="css-help">P1: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> mover · <kbd>F</kbd> elegir · <kbd>G</kbd> soltar &nbsp;|&nbsp; P2: <kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> · <kbd>K</kbd> elegir · <kbd>L</kbd> soltar &nbsp;|&nbsp; Mouse: clic = P1 · clic derecho = P2 · clic en la etiqueta del panel = CPU/Jugador</div>
+  <div class="css-help" id="css-help"></div>
   <div class="options-row">
     <div class="opt">
       <label>Vidas</label>
@@ -71,19 +71,16 @@
   <h1 class="screen-title">CONTROLES Y TÉCNICAS</h1>
   <div class="controls-wrap">
     <div class="ctrl-col">
-      <h2>Teclado</h2>
-      <table class="keys">
-        <tr><th></th><th class="p1">P1</th><th class="p2">P2</th></tr>
-        <tr><td>Mover</td><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td><kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd></td></tr>
-        <tr><td>Saltar</td><td><kbd>Espacio</kbd></td><td><kbd>J</kbd> / <kbd>Num0</kbd></td></tr>
-        <tr><td>Ataque</td><td><kbd>F</kbd></td><td><kbd>K</kbd> / <kbd>Num1</kbd></td></tr>
-        <tr><td>Especial</td><td><kbd>G</kbd></td><td><kbd>L</kbd> / <kbd>Num2</kbd></td></tr>
-        <tr><td>Escudo / Esquiva</td><td><kbd>H</kbd></td><td><kbd>Ñ</kbd> / <kbd>Num3</kbd></td></tr>
-        <tr><td>Agarre</td><td><kbd>R</kbd></td><td><kbd>I</kbd> / <kbd>Num.</kbd></td></tr>
-        <tr><td>Pausa</td><td colspan="2"><kbd>Esc</kbd> / <kbd>P</kbd></td></tr>
-        <tr><td>Hitboxes (debug)</td><td colspan="2"><kbd>Tab</kbd></td></tr>
+      <h2>Teclado <small class="bind-hint">clic en una tecla para cambiarla · “Saltar con Arriba” = tap jump</small></h2>
+      <table class="keys" id="keys-table">
+        <thead><tr><th></th><th class="p1">P1</th><th class="p2">P2</th></tr></thead>
+        <tbody id="keys-body"></tbody>
       </table>
-      <p class="note">🎮 <b>Mandos</b> soportados (Xbox/PS/Switch): stick = mover, <b>A</b> ataque, <b>B</b> especial, <b>X/Y</b> saltar, <b>gatillos</b> escudo, <b>RB/LB</b> agarre, <b>stick derecho</b> = C-stick (smash / aéreos).</p>
+      <p class="note bind-status" id="bind-status">Pulsa una tecla resaltada para reasignarla. Esc cancela.</p>
+      <div class="bind-actions">
+        <button class="btn" id="btn-reset-keys" type="button">RESTABLECER TECLAS</button>
+      </div>
+      <p class="note">🎮 <b>Mandos</b> soportados (Xbox/PS/Switch): stick = mover, <b>A</b> ataque, <b>B</b> especial, <b>X/Y</b> saltar, <b>gatillos</b> escudo, <b>RB/LB</b> agarre, <b>Select</b> burla, <b>stick derecho</b> = C-stick (smash / aéreos).</p>
       <h2>Ataques</h2>
       <ul class="tech">
         <li><b>Tilts:</b> mantén una dirección y presiona Ataque.</li>

@@ -22,6 +22,8 @@ const UI = {
     this.current = id;
     this.focusIdx = 0;
     if (['title', 'select', 'controls'].includes(id)) Sound.playMusic('menu');
+    if (id === 'controls') this.renderControls();
+    if (id === 'select') this.updateSelectHelp();
     this.updateFocus();
   },
   buttons() { return this.current ? $$(`#screen-${this.current} .btn`) : []; },
@@ -179,11 +181,94 @@ const UI = {
     Sound.voice('winnerIs');
     if (w) setTimeout(() => Sound.voice('name_' + w.charId), 1450);
   },
+
+  // ----- Remapeo de teclas -----
+  bindListen: null, // { port, action }
+  ACTION_LABELS: {
+    up: 'Arriba', down: 'Abajo', left: 'Izquierda', right: 'Derecha',
+    jump: 'Saltar', attack: 'Ataque', special: 'Especial', shield: 'Escudo / Esquiva', grab: 'Agarre', taunt: 'Burla',
+  },
+  kbd(code) { return `<kbd>${keyLabel(code)}</kbd>`; },
+  updateSelectHelp() {
+    const p1 = KEYMAPS[0], p2 = KEYMAPS[1];
+    const move = (m) => [m.up, m.left, m.down, m.right].map((c) => this.kbd(c)).join('');
+    $('#css-help').innerHTML =
+      `P1: ${move(p1)} mover · ${this.kbd(p1.attack)} elegir · ${this.kbd(p1.special)} soltar` +
+      ` &nbsp;|&nbsp; P2: ${move(p2)} · ${this.kbd(p2.attack)} elegir · ${this.kbd(p2.special)} soltar` +
+      ` &nbsp;|&nbsp; Mouse: clic = P1 · clic derecho = P2 · clic en la etiqueta del panel = CPU/Jugador`;
+  },
+  setBindStatus(text, kind) {
+    const st = $('#bind-status');
+    if (!st) return;
+    st.textContent = text;
+    st.classList.toggle('waiting', kind === 'waiting');
+    st.classList.toggle('error', kind === 'error');
+  },
+  cancelBind() {
+    this.bindListen = null;
+    this.setBindStatus('Pulsa una tecla resaltada para reasignarla. Esc cancela.');
+    this.renderControls();
+  },
+  startBind(port, action) {
+    this.bindListen = { port, action };
+    this.setBindStatus(`Escuchando P${port + 1} · ${this.ACTION_LABELS[action]}… pulsa una tecla (Esc cancela)`, 'waiting');
+    this.renderControls();
+    Sound.sfx.move();
+  },
+  finishBind(code) {
+    const b = this.bindListen;
+    if (!b) return;
+    if (BIND_BLOCKED.has(code)) {
+      this.setBindStatus(`No se puede usar ${keyLabel(code)}. Prueba otra tecla.`, 'error');
+      Sound.sfx.back();
+      return; // sigue escuchando
+    }
+    const result = setKeyBinding(b.port, b.action, code);
+    if (!result.ok) {
+      if (result.reason === 'duplicate') {
+        const c = result.conflict;
+        this.setBindStatus(
+          `${keyLabel(code)} ya está en P${c.port + 1} · ${this.ACTION_LABELS[c.action]}. Elige otra.`,
+          'error'
+        );
+      } else {
+        this.setBindStatus(result.reason || 'No se pudo asignar esa tecla.', 'error');
+      }
+      Sound.sfx.back();
+      return; // sigue escuchando hasta Esc o una tecla válida
+    }
+    this.bindListen = null;
+    this.setBindStatus(`Asignado: ${keyLabel(code)} → P${b.port + 1} ${this.ACTION_LABELS[b.action]}`);
+    Sound.sfx.select();
+    this.renderControls();
+    this.updateSelectHelp();
+  },
+  renderControls() {
+    const body = $('#keys-body');
+    if (!body) return;
+    const rows = KEYMAP_ACTIONS.map((action) => {
+      const cells = [0, 1].map((port) => {
+        const code = KEYMAPS[port][action];
+        const listening = this.bindListen && this.bindListen.port === port && this.bindListen.action === action;
+        return `<td><button type="button" class="key-bind${listening ? ' listening' : ''}" data-port="${port}" data-action="${action}" title="Clic para cambiar">${keyLabel(code)}</button></td>`;
+      }).join('');
+      return `<tr><td>${this.ACTION_LABELS[action]}</td>${cells}</tr>`;
+    }).join('');
+    body.innerHTML = rows +
+      `<tr><td>Saltar con Arriba</td>` +
+      [0, 1].map((port) => {
+        const on = TAP_JUMP[port];
+        return `<td><button type="button" class="opt-toggle${on ? ' on' : ''}" data-tap-jump="${port}" title="Si está activo, Arriba también salta">${on ? 'ON' : 'OFF'}</button></td>`;
+      }).join('') +
+      `</tr>` +
+      `<tr><td>Pausa</td><td colspan="2"><kbd>Esc</kbd> / <kbd>P</kbd></td></tr>` +
+      `<tr><td>Hitboxes (debug)</td><td colspan="2"><kbd>Tab</kbd></td></tr>`;
+  },
 };
 
 // --- Eventos de botones ---
 $$('[data-mode]').forEach((b) => b.addEventListener('click', () => { Sound.init(); Sound.sfx.select(); UI.selectMode(b.dataset.mode); }));
-$$('[data-go]').forEach((b) => b.addEventListener('click', () => { Sound.init(); Sound.sfx.select(); UI.show(b.dataset.go); }));
+$$('[data-go]').forEach((b) => b.addEventListener('click', () => { Sound.init(); Sound.sfx.select(); UI.cancelBind(); UI.show(b.dataset.go); }));
 $$('.stepper').forEach((st) => {
   const [minus, plus] = st.querySelectorAll('button');
   const key = st.dataset.opt;
@@ -198,6 +283,30 @@ $('#btn-quit').addEventListener('click', () => UI.quitToMenu());
 $('#btn-rematch').addEventListener('click', () => { game.paused = false; UI.fight(); });
 $('#btn-reselect').addEventListener('click', () => { game.stop(); game.paused = false; UI.show('select'); UI.sel.forEach((q, i) => { q.cur = CHAR_IDS.indexOf(UI.cfg.chars[i]); }); UI.sel[0].chosen = false; UI.render(); });
 $('#btn-menu').addEventListener('click', () => UI.quitToMenu());
+$('#btn-reset-keys').addEventListener('click', () => {
+  resetKeymaps(); UI.cancelBind();
+  UI.setBindStatus('Teclas restablecidas a los valores por defecto.');
+  UI.renderControls(); UI.updateSelectHelp(); Sound.sfx.select();
+});
+$('#keys-body').addEventListener('click', (e) => {
+  const tap = e.target.closest('[data-tap-jump]');
+  if (tap) {
+    Sound.init();
+    const port = +tap.dataset.tapJump;
+    setTapJump(port, !TAP_JUMP[port]);
+    UI.setBindStatus(
+      `P${port + 1}: Saltar con Arriba ${TAP_JUMP[port] ? 'activado' : 'desactivado'}` +
+      (TAP_JUMP[port] ? ' (Arriba también salta)' : ' (solo el botón Saltar)')
+    );
+    UI.renderControls();
+    Sound.sfx.select();
+    return;
+  }
+  const btn = e.target.closest('button.key-bind[data-action]');
+  if (!btn) return;
+  Sound.init();
+  UI.startBind(+btn.dataset.port, btn.dataset.action);
+});
 let greeted = false;
 document.addEventListener('pointerdown', () => { Sound.init(); if (!greeted) { greeted = true; setTimeout(() => Sound.voice('name_crafter_smash'), 200); } });
 
@@ -205,6 +314,12 @@ document.addEventListener('pointerdown', () => { Sound.init(); if (!greeted) { g
 KeyPressHandlers.push((e) => {
   Sound.init();
   const k = e.code;
+  if (UI.bindListen) {
+    e.preventDefault();
+    if (k === 'Escape') { UI.cancelBind(); Sound.sfx.back(); }
+    else UI.finishBind(k);
+    return;
+  }
   if (k === 'KeyM') { const on = Sound.toggleMusic(); $('#mute-ind').textContent = on ? '' : '🔇 música silenciada (M)'; return; }
   if (UI.current === null) { // en juego
     if (k === 'Escape' || k === 'KeyP') UI.pause(true);
@@ -218,14 +333,15 @@ KeyPressHandlers.push((e) => {
   }
   if (UI.current === 'pause' && (k === 'Escape' || k === 'KeyP')) { UI.pause(false); return; }
   if (UI.current === 'select') {
-    if (k === 'KeyA' || k === 'KeyW') UI.moveCursor(0, -1);
-    if (k === 'KeyD' || k === 'KeyS') UI.moveCursor(0, 1);
-    if (k === 'KeyF') UI.choose(0);
-    if (k === 'KeyG') UI.unchoose(0);
-    if (k === 'ArrowLeft' || k === 'ArrowUp') UI.moveCursor(1, -1);
-    if (k === 'ArrowRight' || k === 'ArrowDown') UI.moveCursor(1, 1);
-    if (k === 'KeyK') UI.choose(1);
-    if (k === 'KeyL') UI.unchoose(1);
+    const p1 = KEYMAPS[0], p2 = KEYMAPS[1];
+    if (k === p1.left || k === p1.up) UI.moveCursor(0, -1);
+    if (k === p1.right || k === p1.down) UI.moveCursor(0, 1);
+    if (k === p1.attack) UI.choose(0);
+    if (k === p1.special) UI.unchoose(0);
+    if (k === p2.left || k === p2.up) UI.moveCursor(1, -1);
+    if (k === p2.right || k === p2.down) UI.moveCursor(1, 1);
+    if (k === p2.attack) UI.choose(1);
+    if (k === p2.special) UI.unchoose(1);
     if (k === 'Enter' || k === 'Space') { e.preventDefault(); UI.fight(); }
     if (k === 'Escape') UI.show('title');
     return;
@@ -252,5 +368,6 @@ setInterval(() => {
 }, 50);
 
 UI.show('title');
+UI.updateSelectHelp();
 (function menuLoop(t) { if (UI.current === 'select') UI.drawPanels(Math.floor(t / 16.7)); requestAnimationFrame(menuLoop); })(0);
 window.addEventListener('resize', () => { if (UI.current === 'select') UI.render(); });
