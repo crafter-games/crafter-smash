@@ -47,7 +47,7 @@ class Fighter {
     this.record = { dealt: 0, taken: 0, kos: 0, falls: 0, lcOk: 0, lcTotal: 0, wavedash: 0, techs: 0, parries: 0, maxCombo: 0, sd: 0 };
     this.prevRaw = emptyInput();
     this.inp = emptyInput();
-    this.buf = { attack: -999, special: -999, jump: -999, shield: -999, grab: -999, c: -999 };
+    this.buf = { attack: -999, special: -999, jump: -999, shield: -999, grab: -999, taunt: -999, c: -999 };
     this.cdir = { x: 0, y: 0 };
     this.tapX = { dir: 0, age: 99 }; this.tapY = { dir: 0, age: 99 };
     this.lastShieldPress = -999;
@@ -91,12 +91,14 @@ class Fighter {
     i.shieldP = r.shield && !p.shield;
     i.grabP = r.grab && !p.grab;
     i.jumpP = r.jump && !p.jump;
+    i.tauntP = r.taunt && !p.taunt;
     const f = g.frame;
     if (i.attackP) this.buf.attack = f;
     if (i.specialP) this.buf.special = f;
     if (i.shieldP) { this.buf.shield = f; this.lastShieldPress = f; this.shieldDir = { x: r.x, y: r.y }; }
     if (i.grabP) this.buf.grab = f;
     if (i.jumpP) { this.buf.jump = f; this.jumpHeld = true; }
+    if (i.tauntP) this.buf.taunt = f;
     if (!r.jump) this.jumpHeld = false;
     // taps (inputs "smash" del stick)
     if (Math.abs(r.x) >= 0.8 && (Math.abs(p.x) < 0.5 || sgn(p.x) !== sgn(r.x))) this.tapX = { dir: sgn(r.x), age: 0 };
@@ -159,6 +161,9 @@ class Fighter {
     if (this.consume('attack')) { this.groundAttack(); return true; }
     if (this.consume('grab')) { this.startMove(['dash', 'run'].includes(this.state) ? 'dashgrab' : 'grab'); return true; }
     if (this.consume('jump')) { this.startJumpsquat(); return true; }
+    if (this.consume('taunt') && ['idle', 'walk', 'crouch'].includes(this.state)) {
+      this.startMove('taunt'); return true;
+    }
     if (this.inp.shield) { this.buf.shield = -999; this.setState('shield'); Sound.sfx.shieldUp(); return true; }
     return false;
   }
@@ -408,7 +413,7 @@ class Fighter {
     this.shieldHP -= 0.13;
     if (this.shieldHP <= 0) { this.shieldBreak(); return; }
     const i = this.inp;
-    if (this.consume('jump') || (this.tapY.age === 0 && this.tapY.dir > 0)) { this.startJumpsquat(); return; }
+    if (this.consume('jump') || (TAP_JUMP[this.port] && this.tapY.age === 0 && this.tapY.dir > 0)) { this.startJumpsquat(); return; }
     if (i.y > 0.5 && this.consume('special')) { this.startMove('uspecial'); return; }
     if (this.consume('attack') || this.consume('grab')) { this.startMove('grab'); return; }
     if (this.tapX.age <= 1 && Math.abs(i.x) > 0.7) { this.startRoll(sgn(i.x)); return; }

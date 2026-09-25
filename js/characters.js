@@ -25,6 +25,11 @@ const COMMON_MOVES = {
     frames: 40, intangible: [1, 22], poses: { wind: { crouch: 18, lean: 30 }, hit: { legF: [95, 0], lean: -10 } },
     hitboxes: [H(22, 26, 48, 40, 26, 8, 40, 60, 30)],
   },
+  taunt: {
+    frames: 60, iasa: 55,
+    poses: { wind: { armF: [100, 50], armB: [80, 50] }, hit: { armF: [150, 10], armB: [-30, 40], lean: 10, headTilt: -6 } },
+    update(f) { f.vx = approach(f.vx, 0, 0.55); },
+  },
 };
 
 const CHARACTERS = {
@@ -40,6 +45,7 @@ const CHARACTERS = {
       ['Esp. ↑', 'Commit Push: carga fuego y sale disparado en 8 direcciones'],
       ['Esp. ↓', 'Espejo (shine): refleja proyectiles, se cancela con salto'],
       ['Súper', '▲ DEPLOY A PRODUCCIÓN en Vercel'],
+      ['Burla', '▲ ship it / LGTM'],
     ],
     stats: {
       weight: 80, gravity: 1.02, maxFall: 12.5, fastFall: 16.5,
@@ -211,6 +217,41 @@ const CHARACTERS = {
           if (sf === 20 && f.inp.special) f.sf = 19; // mantener el shine
         },
       },
+      taunt: {
+        frames: 80, iasa: 72,
+        poses: {
+          wind: { crouch: 14, armF: [50, 110], armB: [40, 100], lean: 8, headTilt: 6 },
+          hit: { crouch: 0, armF: [155, 0], armB: [-30, 50], lean: 12, headTilt: -12, prop: 'gun' },
+        },
+        anim(f, sf) {
+          if (sf < 10) return { crouch: 14 - sf * 0.4, armF: [50 + sf * 4, 110 - sf * 6], armB: [40, 100] };
+          if (sf < 28) {
+            // teclea
+            const tap = (sf % 6 < 3);
+            return { crouch: 8, lean: 6, armF: tap ? [70, 95] : [55, 105], armB: tap ? [55, 100] : [70, 90], headTilt: 8 };
+          }
+          if (sf < 70) {
+            const pulse = Math.sin((sf - 28) * 0.25) * 4;
+            return { armF: [155, -5 + pulse], armB: [-25, 45], lean: 10 + pulse * 0.3, headTilt: -14, prop: 'gun' };
+          }
+        },
+        update(f, sf, g) {
+          f.vx = approach(f.vx, 0, 0.55);
+          if (sf === 12) Sound.play('menuScroll', 0.4, 1.4);
+          if (sf === 28) {
+            Sound.sfx.taunt();
+            g.fx.text(f.x, f.y - 155, pick(['▲ ship it', 'LGTM', 'git push -f', 'Ready ✓']), f.c.accent, 24, { life: 50, max: 50 });
+          }
+          if (sf > 28 && sf < 70 && sf % 7 === 0) g.fx.sparkle(f.x + f.facing * 50, f.y - 90, f.c.glow);
+        },
+        drawOver(ctx, f) {
+          if (f.sf < 28 || f.sf > 72) return;
+          const a = f.sf > 64 ? (72 - f.sf) / 8 : 1;
+          ctx.save(); ctx.globalAlpha = a;
+          drawVercel(ctx, f.x + f.facing * 58, f.y - 118 + Math.sin(f.sf * 0.3) * 4, 16, 0, true);
+          ctx.restore();
+        },
+      },
       final: {
         frames: 60, special: true, final: true, slideOff: true,
         poses: { wind: { crouch: 10, lean: -10, armF: [150, 20], armB: [150, 20] }, hit: { lean: 55, armF: [90, 0], armB: [-80, 0], legF: [40, 0], legB: [-70, 0] } },
@@ -274,6 +315,7 @@ const CHARACTERS = {
       ['Smash →', 'Martillo de Ingeniero Civil 🔨'],
       ['Smash ↓', 'Push-ups: 4 flexiones que sacuden el piso 💪'],
       ['Súper', 'FOTO GRUPAL — ¡escóndete detrás!'],
+      ['Burla', '✌️ Paz y amor'],
     ],
     stats: {
       weight: 96, gravity: 0.46, maxFall: 7.6, fastFall: 11.5,
@@ -439,6 +481,36 @@ const CHARACTERS = {
           if (sf === 7) f.dynHB.push(H(7, 7, 50, 60, 70, f.mv.dmg || 10, 38, 60, 82, { g: 1, fx: 'flash', noStale: true }));
         },
       },
+      taunt: {
+        frames: 88, iasa: 80,
+        poses: {
+          wind: { armF: [40, 100], armB: [30, 90], lean: -4, crouch: 6 },
+          hit: { armF: [160, 5], armB: [150, 10], lean: -8, headTilt: -10, prop: 'peace' },
+        },
+        anim(f, sf) {
+          if (sf < 12) return { crouch: 6 - sf * 0.3, armF: [40 + sf * 8, 100 - sf * 7] };
+          if (sf <= 78) {
+            const sway = Math.sin(sf * 0.18) * 14;
+            const bob = Math.abs(Math.sin(sf * 0.22)) * 6;
+            return {
+              crouch: bob,
+              lean: sway * 0.35,
+              armF: [155 + Math.sin(sf * 0.2) * 6, -5 - bob],
+              armB: [145 + Math.cos(sf * 0.2) * 6, 0 - bob * 0.5],
+              headTilt: -8 + sway * 0.2,
+              prop: 'peace',
+            };
+          }
+        },
+        update(f, sf, g) {
+          f.vx = approach(f.vx, 0, 0.55);
+          if (sf === 12) {
+            Sound.sfx.peace();
+            g.fx.text(f.x, f.y - 150, pick(['✌️ paz y amor', 'buena vibra', 'namasté']), f.c.accent, 24, { life: 52, max: 52 });
+          }
+          if (sf > 12 && sf < 75 && sf % 6 === 0) g.fx.sparkle(f.x + rand(-40, 40), f.y - rand(70, 130), f.c.glow);
+        },
+      },
       final: {
         frames: 140, special: true, final: true,
         poses: { wind: { armF: [150, 20], prop: 'phone' }, hit: { armF: [150, 20], prop: 'phone', headTilt: -6 } },
@@ -574,6 +646,7 @@ CHARACTERS.jibaru = {
     ['Esp. ↑', 'Vuelo: Charizard te lleva hacia arriba'],
     ['Esp. ↓', '¡Miku!: invoca a Hatsune Miku, que lanza notas musicales'],
     ['Súper', 'CONCIERTO DE MIKU'],
+    ['Burla', 'Dirige un mini-concierto Vocaloid'],
   ],
   stats: {
     weight: 88, gravity: 0.8, maxFall: 10.5, fastFall: 14,
@@ -646,6 +719,37 @@ CHARACTERS.jibaru = {
         if (sf === 1) { g.banner('CONCIERTO DE MIKU', '#39c5bb'); Sound.sfx.final(); spawnMiku(f, g, true); }
       },
     },
+    taunt: {
+      frames: 86, iasa: 78,
+      poses: {
+        wind: { crouch: 8, armF: [80, 90], armB: [70, 90], lean: 4 },
+        hit: { armF: [170, 0], armB: [160, 10], lean: -6, headTilt: -8 },
+      },
+      anim(f, sf) {
+        if (sf < 12) return { crouch: 6, armF: [60 + sf * 6, 90 - sf * 4], armB: [50 + sf * 5, 85] };
+        if (sf <= 74) {
+          // dirige el concierto
+          const beat = Math.sin(sf * 0.45);
+          return {
+            crouch: Math.abs(beat) * 4,
+            lean: beat * 8,
+            armF: [165 + beat * 10, -5 - Math.abs(beat) * 8],
+            armB: [155 - beat * 12, 5 + Math.abs(beat) * 6],
+            headTilt: -6 + beat * 4,
+          };
+        }
+      },
+      update(f, sf, g) {
+        f.vx = approach(f.vx, 0, 0.55);
+        if (sf === 10) {
+          Sound.play('starRod', 0.55, 1.2);
+          g.fx.text(f.x, f.y - 155, pick(['♪ Miku Miku~', '¡concierto!', 'Vocaloid vibes', '♪ 39 39!']), '#39c5bb', 24, { life: 52, max: 52 });
+        }
+        if (sf > 10 && sf < 72 && sf % 5 === 0) {
+          g.fx.text(f.x + rand(-50, 50), f.y - rand(80, 140), pick(['♪', '♫', '♬']), pick(['#39c5bb', '#ffe23f', '#fff']), 18, { life: 28, max: 28 });
+        }
+      },
+    },
   },
   throws: { ...CHARACTERS.railly.throws },
 };
@@ -662,6 +766,7 @@ CHARACTERS.edward = {
     ['Esp. ↑', 'Longcat: un gato laaargo te sube'],
     ['Esp. ↓', 'Keyboard Cat: trampa que "toca y despide" al rival'],
     ['Súper', 'LLUVIA DE MEMES'],
+    ['Burla', 'Fanático de los gatos naranjas'],
   ],
   stats: {
     weight: 104, gravity: 0.7, maxFall: 10, fastFall: 13,
@@ -778,6 +883,68 @@ CHARACTERS.edward = {
       },
       drawOver(ctx, f, g) { if (f.sf > 100 && f.sf < 140) { const v = g.viewRect(); Items.meme(ctx, 'cat_yelling', v.x + v.w / 2, v.y + v.h * 0.32, v.h * 0.3 * Math.min(1, (f.sf - 100) / 8), 0); } },
     },
+    taunt: {
+      frames: 86, iasa: 78,
+      poses: {
+        wind: { armF: [40, 70], armB: [-40, 70], crouch: 12, lean: -8, headTilt: 10 },
+        hit: { armF: [130, 20], armB: [-130, 20], lean: 0, headTilt: 8, crouch: 2 },
+      },
+      anim(f, sf) {
+        if (sf < 16) {
+          // shrug
+          return {
+            crouch: 10,
+            lean: -6,
+            armF: [50 + sf * 2, 60],
+            armB: [-50 - sf * 2, 60],
+            headTilt: 8 + Math.sin(sf * 0.5) * 6,
+          };
+        }
+        if (sf < 28) {
+          const t = (sf - 16) / 12;
+          return {
+            crouch: lerp(10, 2, t),
+            armF: [lerp(80, 140, t), lerp(60, 15, t)],
+            armB: [lerp(-80, -140, t), lerp(60, 15, t)],
+            headTilt: lerp(10, -6, t),
+            lean: lerp(-6, 6, t),
+          };
+        }
+        if (sf <= 74) {
+          const bob = Math.sin(sf * 0.28) * 8;
+          return {
+            crouch: 2 + Math.abs(bob) * 0.3,
+            armF: [135, 10 + bob * 0.4],
+            armB: [-135, 10 - bob * 0.4],
+            headTilt: -4 + bob * 0.3,
+            lean: bob * 0.2,
+          };
+        }
+      },
+      update(f, sf, g) {
+        f.vx = approach(f.vx, 0, 0.55);
+        if (sf === 1) f.mv.cat = pick(['cat_bub', 'cat_grumpy', 'cat_maru']);
+        if (sf === 18) {
+          Sound.sfx.taunt();
+          g.fx.text(f.x, f.y - 160, pick([
+            '¡los gatos son lo mejor!',
+            '¡mira ese gato naranja!',
+            'los gatos naranjas son ley',
+            '¿tienes un gato naranja?',
+            'gatos naranjas >>> perros',
+            'mi espíritu es un gato naranja',
+          ]), '#ff9ab0', 22, { life: 52, max: 52 });
+        }
+        if (sf > 20 && sf < 70 && sf % 5 === 0) g.fx.sparkle(f.x + rand(-45, 45), f.y - rand(60, 140), pick(['#ff9ab0', '#ff8c1a', '#fff']));
+      },
+      drawOver(ctx, f) {
+        if (f.sf < 16 || f.sf > 78) return;
+        const t = f.sf - 16;
+        const bob = Math.sin(t * 0.3) * 8;
+        const a = f.sf > 70 ? (78 - f.sf) / 8 : Math.min(1, t / 6);
+        Items.draw(ctx, f.mv.cat || 'cat_bub', f.x + f.facing * 52, f.y - 108 + bob, 40, { alpha: a, rot: Math.sin(t * 0.15) * 0.12 });
+      },
+    },
   },
   throws: { ...CHARACTERS.anthony.throws, b: { d: 11, a: 138, b: 62, k: 90 } },
 };
@@ -802,6 +969,7 @@ CHARACTERS.shiara = {
     ['Esp. ↑', 'Estrella Warp: vuela sobre la estrella de Kirby'],
     ['Esp. ↓', '¡CHANFLES! ¡PIPIPI! ¡RAYOS!: grita palabrotas que golpean'],
     ['Súper', 'LLUVIA DE KIRBYS · además tiene 5 saltos, como Kirby'],
+    ['Burla', 'Enseña su Kirby con orgullo'],
   ],
   stats: {
     weight: 72, gravity: 0.6, maxFall: 8.5, fastFall: 12,
@@ -904,6 +1072,58 @@ CHARACTERS.shiara = {
           const tg = g.fighters.find((t) => t !== f && t.state !== 'dead') || f;
           g.spawnProjectile(f, { type: 'img', img: 'kirby_big', h: 180, x: tg.x, y: g.viewRect().y - 100, vx: 0, vy: 14, grav: 0.8, life: 60, r: 80, d: 16, a: 65, b: 95, k: 80, pierce: true, noReflect: true, noClash: true,
             onHit(p, t, gg) { gg.fx.text(p.x, p.y - 120, '¡POYO!', '#ff8ac8', 48, { life: 60, max: 60 }); gg.shake(16); } });
+        }
+      },
+    },
+    taunt: {
+      frames: 92, iasa: 84,
+      poses: {
+        wind: { crouch: 16, armF: [70, 110], armB: [60, 100], lean: -10 },
+        hit: { crouch: 4, armF: [158, -5], armB: [148, 5], lean: -6, headTilt: -16 },
+      },
+      anim(f, sf) {
+        if (sf < 8) return null;
+        if (sf <= 78) {
+          const bob = Math.abs(Math.sin((sf - 8) * 0.38)) * 12;
+          return {
+            crouch: 2 + bob,
+            lean: Math.sin(sf * 0.48) * 10,
+            armF: [158, -8 - bob * 1.5],
+            armB: [148, -4 - bob],
+            headTilt: -12 - bob * 0.4,
+          };
+        }
+      },
+      update(f, sf, g) {
+        f.vx = approach(f.vx, 0, 0.55);
+        if (sf === 6) {
+          Sound.sfx.taunt();
+          g.fx.text(f.x, f.y - 175, pick([
+            '¡mira mi Kirby!',
+            'amo el rosa',
+            'Kirby fan #1',
+            '¿no es adorable?',
+            'todo se ve mejor si tiene rosa',
+            'el mejor de todos',
+          ]), '#ff8ac8', 24, { life: 52, max: 52 });
+        }
+        if (sf > 8 && sf < 82 && sf % 4 === 0) {
+          g.fx.sparkle(f.x + rand(-55, 55), f.y - rand(55, 150), pick(['#ff8ac8', '#ffe23f', '#fff', '#ffb0cc']));
+        }
+      },
+      drawOver(ctx, f) {
+        if (f.sf < 5 || f.sf > 86) return;
+        const t = f.sf - 5;
+        const bob = Math.sin(t * 0.35) * 10;
+        const spin = Math.sin(t * 0.2) * 0.15;
+        const alpha = f.sf > 78 ? (86 - f.sf) / 8 : Math.min(1, t / 5);
+        const h = 46 + Math.sin(t * 0.4) * 5;
+        Items.draw(ctx, 'kirby_happy', f.x + f.facing * 42, f.y - 100 + bob, h, { flip: f.facing < 0, alpha, rot: spin });
+        Items.draw(ctx, 'kirby_star', f.x - f.facing * 48, f.y - 128 + bob * 0.6, 24 + Math.sin(t * 0.5) * 3, {
+          alpha: alpha * 0.95, rot: t * 0.12,
+        });
+        if (t > 20 && t % 14 < 7) {
+          Items.draw(ctx, 'kirby_star', f.x + f.facing * 70, f.y - 70 - bob, 16, { alpha: alpha * 0.7, rot: -t * 0.15 });
         }
       },
     },

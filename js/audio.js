@@ -86,6 +86,7 @@ const Sound = (() => {
     back() { play('menuBack', 0.7); },
     pause() { play('pause', 0.8); },
     medallion() { play('medallion', 0.8); },
+    taunt() { play('medallion', 0.55, 1.15); },
     results() { play('results', 0.8); },
     appear() { play('appear', 0.7); },
     explosion() { play('explosion', 0.9); },
