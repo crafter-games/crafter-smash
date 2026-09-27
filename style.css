@@ -66,6 +66,16 @@ canvas#game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: b
 .btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
 .btn.go { background: linear-gradient(180deg, #ffd23f, #ff8c1a); color: var(--ink); }
 .btn small { font-size: 14px; opacity: .7; }
+.github-button {
+  position: absolute; top: 20px; right: 20px;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 14px; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0;
+  text-decoration: none;
+}
+.github-button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+@media (max-height: 700px) {
+  #screen-title { padding-top: 96px; }
+}
 .hint { opacity: .6; font-size: 14px; }
 kbd {
   display: inline-block; min-width: 22px; padding: 1px 6px; margin: 0 1px;
